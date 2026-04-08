@@ -36,7 +36,7 @@ export default function Dashboard() {
   const [data, setData] = useState<ChartTemperaturePoint[]>([]);
 
   useEffect(() => {
-    fetch('https://api.pisystem.local/bop/temperature')
+    fetch('/api/temperature')
       .then((res) => res.json())
       .then((apiData: ApiTemperaturePoint[]) => {
         const normalizedData = apiData.map((point) => ({
