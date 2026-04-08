@@ -52,7 +52,17 @@ export default function Dashboard() {
 
   return (
     <main className="p-8 font-sans">
-      <h1 className="text-2xl font-bold mb-6 text-slate-800">BOP Monitoring Solution</h1>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold text-slate-800">BOP Monitoring Solution</h1>
+        <a
+          href="https://github.com/bernardooduarte/bop-mini-demo/actions/workflows/playwright.yml"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+        >
+          Ver testes do Playwright
+        </a>
+      </div>
       <div className="w-full h-96 bg-white p-4 shadow-md rounded-lg" data-testid="chart-container">
         {data.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
