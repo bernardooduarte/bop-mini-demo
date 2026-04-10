@@ -51,3 +51,51 @@ After each run, open the workflow execution and download artifacts:
 - `playwright-test-results`: raw results and traces
 
 This is the recommended way to show test evidence alongside Vercel deployments, since Vercel links to the same commit status checks.
+
+## Storybook
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run locally:
+
+```bash
+npm run storybook
+```
+
+Generate static files:
+
+```bash
+npm run build-storybook
+```
+
+### Storybook on Vercel
+
+For a dedicated Storybook project on Vercel:
+
+- Project type: `Other`
+- Install command: `npm install`
+- Build command: `npm run build-storybook`
+- Output directory: `storybook-static`
+
+After first deploy, copy the final Storybook URL (for example, `https://bop-mini-demo-storybook.vercel.app`).
+
+### Main app env var (`NEXT_PUBLIC_STORYBOOK_URL`)
+
+Set `NEXT_PUBLIC_STORYBOOK_URL` in the main Next.js app with your final Storybook URL.
+
+Local development (`.env.local`):
+
+```bash
+NEXT_PUBLIC_STORYBOOK_URL=https://bop-mini-demo-storybook.vercel.app
+```
+
+Vercel (main app project):
+
+- Go to `Settings -> Environment Variables`
+- Add `NEXT_PUBLIC_STORYBOOK_URL`
+- Use the final Storybook deployment URL as value
+- Redeploy the app

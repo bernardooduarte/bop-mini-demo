@@ -1,0 +1,15 @@
+import type { Meta, StoryObj } from '@storybook/react';
+import { StorybookLinkButton } from './storybook-link-button';
+
+const meta = {
+  title: 'Navigation/StorybookLinkButton',
+  component: StorybookLinkButton,
+  args: {
+    href: 'https://bop-mini-demo-storybook.vercel.app',
+  },
+} satisfies Meta<typeof StorybookLinkButton>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
