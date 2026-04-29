@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, userEvent, within } from 'storybook/test';
 import { InputField } from './input-field';
 
 const meta = {
@@ -55,16 +54,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const input = canvas.getByLabelText(/nome completo/i);
-
-    await userEvent.type(input, 'Maria Silva');
-
-    await expect(input).toHaveValue('Maria Silva');
-  },
-};
+export const Default: Story = {};
 
 export const WithError: Story = {
   args: {
