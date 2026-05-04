@@ -56,7 +56,7 @@ export default function Dashboard() {
   const [isSaving, setIsSaving] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState(alertItems[0].label);
   const storybookUrl =
-    process.env.NEXT_PUBLIC_STORYBOOK_URL ?? 'https://bop-mini-demo-storybook.vercel.app';
+    process.env.NEXT_PUBLIC_STORYBOOK_URL ?? 'https://storybook-static-taupe-kappa.vercel.app';
 
   useEffect(() => {
     fetch('/api/temperature')
