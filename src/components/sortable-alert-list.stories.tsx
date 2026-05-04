@@ -4,6 +4,14 @@ import { SortableAlertList } from './sortable-alert-list';
 const meta = {
   title: 'BOP Monitoring/Alerts/Sortable Alert List',
   component: SortableAlertList,
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Exemplo de referência para implementação de drag and drop com dnd-kit: https://dndkit.com/',
+      },
+    },
+  },
   argTypes: {
     variant: {
       control: 'select',
@@ -61,5 +69,15 @@ export const Disabled: Story = {
   args: {
     disabled: true,
     label: 'Alerta indisponível',
+  },
+};
+
+export const DocsDndKitReference: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: 'Referência oficial do dnd-kit: https://dndkit.com/',
+      },
+    },
   },
 };
