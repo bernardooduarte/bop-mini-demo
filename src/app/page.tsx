@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { StorybookLinkButton } from '@/components/storybook-link-button';
 import { Button } from '@/components/button';
 import { InputField } from '@/components/input-field';
+import { SortableAlertList } from '@/components/sortable-alert-list';
 
 type ApiTemperaturePoint = {
   time: string;
@@ -16,6 +17,18 @@ type ChartTemperaturePoint = {
   tempF: number;
   tempC: number;
 };
+
+type AlertItem = {
+  label: string;
+  variant: 'alta-temperatura' | 'falha-do-sensor' | 'pressao-critica' | 'baixa-pressao';
+};
+
+const alertItems: AlertItem[] = [
+  { label: 'Alta Temperatura', variant: 'alta-temperatura' },
+  { label: 'Falha do Sensor', variant: 'falha-do-sensor' },
+  { label: 'Pressão Crítica', variant: 'pressao-critica' },
+  { label: 'Baixa Pressão', variant: 'baixa-pressao' },
+];
 
 function fahrenheitToCelsius(tempF: number): number {
   return Number((((tempF - 32) * 5) / 9).toFixed(1));
@@ -41,6 +54,7 @@ export default function Dashboard() {
   const [thresholdF, setThresholdF] = useState('85');
   const [thresholdError, setThresholdError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedAlert, setSelectedAlert] = useState(alertItems[0].label);
   const storybookUrl =
     process.env.NEXT_PUBLIC_STORYBOOK_URL ?? 'https://bop-mini-demo-storybook.vercel.app';
 
@@ -199,6 +213,33 @@ export default function Dashboard() {
                 onClick={handleToggleAlerts}
                 data-testid="toggle-alerts-button"
               />
+            </div>
+          </div>
+
+          {/* Alert List Section */}
+          <div className="lg:col-span-3 rounded-lg bg-white p-6 shadow-md">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Alertas configurados</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Selecione um alerta para destacar o item atual na lista.
+                </p>
+              </div>
+              <p className="text-sm text-slate-500">
+                Selecionado: <span className="font-medium text-slate-900">{selectedAlert}</span>
+              </p>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {alertItems.map((item) => (
+                <SortableAlertList
+                  key={item.variant}
+                  label={item.label}
+                  variant={item.variant}
+                  onClick={() => setSelectedAlert(item.label)}
+                  className={selectedAlert === item.label ? 'ring-2 ring-sky-300' : ''}
+                />
+              ))}
             </div>
           </div>
         </div>

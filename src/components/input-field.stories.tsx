@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { InputField } from './input-field';
 
 const meta = {
-  title: 'UI/InputField',
+  title: 'BOP Monitoring/Forms/Temperature Threshold Input',
   component: InputField,
   argTypes: {
     label: {
@@ -49,6 +49,7 @@ const meta = {
     error: '',
     disabled: false,
   },
+  tags: ['autodocs'],
 } satisfies Meta<typeof InputField>;
 
 export default meta;

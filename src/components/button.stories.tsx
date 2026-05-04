@@ -5,32 +5,41 @@ import { Button } from './button';
 // 1. META — configura o componente
 // ═══════════════════════════════
 const meta = {
-  title: 'UI/Button',
+  title: 'BOP Monitoring/Controls/Button',
   component: Button,
-  
-  // argTypes → controla o que aparece no painel Controls
+
   argTypes: {
+    label: {
+      control: 'text',
+      description: 'Texto exibido dentro do botão.',
+    },
     variant: {
-      control: 'select',                          // dropdown
+      control: 'select',
       options: ['primary', 'secondary', 'danger'],
-      description: 'Visual style do botão',
+      description: 'Define a intenção visual do botão na interface BOP.',
     },
     size: {
-      control: 'radio',                           // radio buttons
+      control: 'radio',
       options: ['sm', 'md', 'lg'],
+      description: 'Define o tamanho do botão.',
     },
-    disabled: { control: 'boolean' },
-    loading: { control: 'boolean' },
-    label: { control: 'text' },
-    onClick: { action: 'clicked' },              // ← Actions: loga no painel
+    loading: {
+      control: 'boolean',
+      description: 'Mostra estado de carregamento e desabilita o botão.',
+    },
+    disabled: {
+      control: 'boolean',
+      description: 'Desabilita o botão manualmente.',
+    },
+    onClick: { action: 'clicked' },
   },
-  
-  // args default para todas as stories
+
   args: {
     label: 'Clique aqui',
     variant: 'primary',
     size: 'md',
   },
+  tags: ['autodocs'],
 } satisfies Meta<typeof Button>;
 
 export default meta;
@@ -72,10 +81,10 @@ export const Loading: Story = {
 // ═══════════════════════════════
 export const AllVariants: Story = {
   render: () => (
-    <div className="flex gap-3">
-      <Button label="Primary" variant="primary" />
-      <Button label="Secondary" variant="secondary" />
-      <Button label="Danger" variant="danger" />
+    <div className="flex flex-wrap gap-3">
+      <Button label="Primário" variant="primary" />
+      <Button label="Secundário" variant="secondary" />
+      <Button label="Perigo" variant="danger" />
     </div>
   ),
 };
