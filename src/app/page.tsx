@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { DragDropProvider } from '@dnd-kit/react';
+import { useSortable } from '@dnd-kit/react/sortable';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { StorybookLinkButton } from '@/components/storybook-link-button';
+import { DndKitLinkButton } from '@/components/dndkit-link-button';
 import { Button } from '@/components/button';
 import { InputField } from '@/components/input-field';
 import { SortableAlertList } from '@/components/sortable-alert-list';
@@ -19,16 +22,42 @@ type ChartTemperaturePoint = {
 };
 
 type AlertItem = {
+  id: string;
   label: string;
   variant: 'alta-temperatura' | 'falha-do-sensor' | 'pressao-critica' | 'baixa-pressao';
 };
 
-const alertItems: AlertItem[] = [
-  { label: 'Alta Temperatura', variant: 'alta-temperatura' },
-  { label: 'Falha do Sensor', variant: 'falha-do-sensor' },
-  { label: 'Pressão Crítica', variant: 'pressao-critica' },
-  { label: 'Baixa Pressão', variant: 'baixa-pressao' },
+const initialAlertItems: AlertItem[] = [
+  { id: 'alta-temperatura', label: 'Alta Temperatura', variant: 'alta-temperatura' },
+  { id: 'falha-do-sensor', label: 'Falha do Sensor', variant: 'falha-do-sensor' },
+  { id: 'pressao-critica', label: 'Pressão Crítica', variant: 'pressao-critica' },
+  { id: 'baixa-pressao', label: 'Baixa Pressão', variant: 'baixa-pressao' },
 ];
+
+type SortableAlertRowProps = {
+  item: AlertItem;
+  index: number;
+  isSelected: boolean;
+  onSelect: () => void;
+};
+
+function SortableAlertRow({ item, index, isSelected, onSelect }: SortableAlertRowProps) {
+  const { ref, isDragging, isDropTarget } = useSortable({ id: item.id, index });
+
+  return (
+    <div
+      ref={ref}
+      className={`transition ${isDragging ? 'opacity-70' : ''} ${isDropTarget ? 'scale-[1.01]' : ''}`}
+    >
+      <SortableAlertList
+        label={item.label}
+        variant={item.variant}
+        onClick={onSelect}
+        className={isSelected ? 'ring-2 ring-sky-300' : ''}
+      />
+    </div>
+  );
+}
 
 function fahrenheitToCelsius(tempF: number): number {
   return Number((((tempF - 32) * 5) / 9).toFixed(1));
@@ -54,9 +83,11 @@ export default function Dashboard() {
   const [thresholdF, setThresholdF] = useState('85');
   const [thresholdError, setThresholdError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedAlert, setSelectedAlert] = useState(alertItems[0].label);
+  const [selectedAlert, setSelectedAlert] = useState(initialAlertItems[0].label);
+  const [dndAlerts, setDndAlerts] = useState(initialAlertItems);
   const storybookUrl =
     process.env.NEXT_PUBLIC_STORYBOOK_URL ?? 'https://storybook-static-taupe-kappa.vercel.app';
+  const dndKitUrl = 'https://dndkit.com/';
 
   useEffect(() => {
     fetch('/api/temperature')
@@ -111,6 +142,7 @@ export default function Dashboard() {
             >
               Ver testes do Playwright
             </a>
+            <DndKitLinkButton href={dndKitUrl} />
             <StorybookLinkButton href={storybookUrl} />
           </div>
         </div>
@@ -220,9 +252,9 @@ export default function Dashboard() {
           <div className="lg:col-span-3 rounded-lg bg-white p-6 shadow-md">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">Alertas configurados</h2>
+                <h2 className="text-lg font-semibold text-slate-900">Exemplo dnd-kit na aplicação</h2>
                 <p className="mt-1 text-sm text-slate-600">
-                  Selecione um alerta para destacar o item atual na lista.
+                  Arraste os cards para reordenar os alertas com dnd-kit.
                 </p>
               </div>
               <p className="text-sm text-slate-500">
@@ -230,17 +262,47 @@ export default function Dashboard() {
               </p>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {alertItems.map((item) => (
-                <SortableAlertList
-                  key={item.variant}
-                  label={item.label}
-                  variant={item.variant}
-                  onClick={() => setSelectedAlert(item.label)}
-                  className={selectedAlert === item.label ? 'ring-2 ring-sky-300' : ''}
-                />
-              ))}
-            </div>
+            <DragDropProvider
+              onDragEnd={(event) => {
+                if (event.canceled) {
+                  return;
+                }
+
+                const sourceId = String(event.operation.source?.id ?? '');
+                const targetId = String(event.operation.target?.id ?? '');
+
+                if (!sourceId || !targetId || sourceId === targetId) {
+                  return;
+                }
+
+                setDndAlerts((current) => {
+                  const sourceIndex = current.findIndex((item) => item.id === sourceId);
+                  const targetIndex = current.findIndex((item) => item.id === targetId);
+
+                  if (sourceIndex < 0 || targetIndex < 0) {
+                    return current;
+                  }
+
+                  const reordered = [...current];
+                  const [movedItem] = reordered.splice(sourceIndex, 1);
+                  reordered.splice(targetIndex, 0, movedItem);
+
+                  return reordered;
+                });
+              }}
+            >
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                {dndAlerts.map((item, index) => (
+                  <SortableAlertRow
+                    key={item.id}
+                    item={item}
+                    index={index}
+                    isSelected={selectedAlert === item.label}
+                    onSelect={() => setSelectedAlert(item.label)}
+                  />
+                ))}
+              </div>
+            </DragDropProvider>
           </div>
         </div>
       </div>
