@@ -5,7 +5,6 @@ import { DragDropProvider } from '@dnd-kit/react';
 import { useSortable } from '@dnd-kit/react/sortable';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { StorybookLinkButton } from '@/components/storybook-link-button';
-import { DndKitLinkButton } from '@/components/dndkit-link-button';
 import { Button } from '@/components/button';
 import { InputField } from '@/components/input-field';
 import { SortableAlertList } from '@/components/sortable-alert-list';
@@ -42,19 +41,26 @@ type SortableAlertRowProps = {
 };
 
 function SortableAlertRow({ item, index, isSelected, onSelect }: SortableAlertRowProps) {
-  const { ref, isDragging, isDropTarget } = useSortable({ id: item.id, index });
+  const { sourceRef, targetRef, isDragging, isDropTarget } = useSortable({
+    id: item.id,
+    index,
+    type: 'alert-item',
+    accept: 'alert-item',
+  });
 
   return (
     <div
-      ref={ref}
+      ref={targetRef}
       className={`transition ${isDragging ? 'opacity-70' : ''} ${isDropTarget ? 'scale-[1.01]' : ''}`}
     >
-      <SortableAlertList
-        label={item.label}
-        variant={item.variant}
-        onClick={onSelect}
-        className={isSelected ? 'ring-2 ring-sky-300' : ''}
-      />
+      <div ref={sourceRef}>
+        <SortableAlertList
+          label={item.label}
+          variant={item.variant}
+          onClick={onSelect}
+          className={isSelected ? 'ring-2 ring-sky-300' : ''}
+        />
+      </div>
     </div>
   );
 }
@@ -87,7 +93,6 @@ export default function Dashboard() {
   const [dndAlerts, setDndAlerts] = useState(initialAlertItems);
   const storybookUrl =
     process.env.NEXT_PUBLIC_STORYBOOK_URL ?? 'https://storybook-static-taupe-kappa.vercel.app';
-  const dndKitUrl = 'https://dndkit.com/';
 
   useEffect(() => {
     fetch('/api/temperature')
@@ -142,7 +147,6 @@ export default function Dashboard() {
             >
               Ver testes do Playwright
             </a>
-            <DndKitLinkButton href={dndKitUrl} />
             <StorybookLinkButton href={storybookUrl} />
           </div>
         </div>
