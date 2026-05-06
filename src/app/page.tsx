@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { DragDropProvider } from '@dnd-kit/react';
-import { useSortable } from '@dnd-kit/react/sortable';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { StorybookLinkButton } from '@/components/storybook-link-button';
 import { Button } from '@/components/button';
 import { InputField } from '@/components/input-field';
 import { SortableAlertList } from '@/components/sortable-alert-list';
+import { useDraggable } from '@dnd-kit/react';
+import { useDroppable } from '@dnd-kit/react';
 
 type ApiTemperaturePoint = {
   time: string;
@@ -40,27 +41,32 @@ type SortableAlertRowProps = {
   onSelect: () => void;
 };
 
-function SortableAlertRow({ item, index, isSelected, onSelect }: SortableAlertRowProps) {
-  const { sourceRef, targetRef, isDragging, isDropTarget } = useSortable({
-    id: item.id,
-    index,
-    type: 'alert-item',
-    accept: 'alert-item',
+function Draggable({ children, id, ...props }: { children: React.ReactNode; id: string }) {
+  const { ref } = useDraggable({
+    id,
   });
 
   return (
-    <div
-      ref={targetRef}
-      className={`transition ${isDragging ? 'opacity-70' : ''} ${isDropTarget ? 'scale-[1.01]' : ''}`}
-    >
-      <div ref={sourceRef}>
-        <SortableAlertList
-          label={item.label}
-          variant={item.variant}
-          onClick={onSelect}
-          className={isSelected ? 'ring-2 ring-sky-300' : ''}
-        />
-      </div>
+    <button ref={ref} {...props}>
+      {children}
+    </button>
+  );
+}
+
+function SortableAlertRow({ item, index, isSelected, onSelect }: SortableAlertRowProps) {
+  const { ref } = useDraggable({
+    id: item.id,
+    data: { index, type: 'alert-item' },
+  });
+
+  return (
+    <div ref={ref} className="cursor-grab active:cursor-grabbing">
+      <SortableAlertList
+        label={item.label}
+        variant={item.variant}
+        onClick={onSelect}
+        className={isSelected ? 'ring-2 ring-sky-300' : ''}
+      />
     </div>
   );
 }
@@ -81,6 +87,18 @@ function formatTimeToMeridiem(time24: string): string {
   const normalizedHour = hour % 12 === 0 ? 12 : hour % 12;
 
   return `${normalizedHour}:${minuteText} ${period}`;
+}
+
+function Droppable({ id, children, className = 'rounded-lg bg-blue-100 p-4 min-h-20' }: { id: string; children: React.ReactNode; className?: string }) {
+  const { ref } = useDroppable({
+    id,
+  });
+
+  return (
+    <div ref={ref} className={className}>
+      {children}
+    </div>
+  );
 }
 
 export default function Dashboard() {
@@ -152,13 +170,42 @@ export default function Dashboard() {
         </div>
 
         {/* Main Grid */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Chart Section - 2 columns on large screens */}
-          <div className="lg:col-span-2">
-            <div
-              className="h-96 rounded-lg bg-white p-4 shadow-md"
-              data-testid="chart-container"
-            >
+        <DragDropProvider
+          onDragEnd={(event) => {
+            if (event.canceled) {
+              return;
+            }
+
+            const sourceId = String(event.operation.source?.id ?? '');
+            const targetId = String(event.operation.target?.id ?? '');
+
+            if (!sourceId || !targetId || sourceId === targetId) {
+              return;
+            }
+
+            setDndAlerts((current) => {
+              const sourceIndex = current.findIndex((item) => item.id === sourceId);
+              const targetIndex = current.findIndex((item) => item.id === targetId);
+
+              if (sourceIndex < 0 || targetIndex < 0) {
+                return current;
+              }
+
+              const reordered = [...current];
+              const [movedItem] = reordered.splice(sourceIndex, 1);
+              reordered.splice(targetIndex, 0, movedItem);
+
+              return reordered;
+            });
+          }}
+        >
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Chart Section - 2 columns on large screens */}
+            <div className="lg:col-span-2">
+              <div
+                className="h-96 rounded-lg bg-white p-4 shadow-md"
+                data-testid="chart-container"
+              >
               {data.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={data}>
@@ -192,65 +239,68 @@ export default function Dashboard() {
                   Carregando dados do PI System...
                 </p>
               )}
-            </div>
-          </div>
-
-          {/* Alert Configuration Section - 1 column */}
-          <div className="rounded-lg bg-white p-6 shadow-md">
-            <h2 className="mb-6 text-lg font-semibold text-slate-900">Configuração de Alertas</h2>
-
-            {/* Alert Status */}
-            <div className="mb-6 rounded-md bg-slate-100 p-4">
-              <p className="text-sm text-slate-600">Estado dos Alertas</p>
-              <p
-                className="mt-2 text-xl font-bold"
-                data-testid="alert-status"
-                style={{ color: alertsEnabled ? '#10b981' : '#6b7280' }}
-              >
-                {alertsEnabled ? '🟢 Ativados' : '⚫ Desativados'}
-              </p>
+              </div>
             </div>
 
-            {/* Temperature Threshold Input */}
-            <div className="mb-4">
-              <InputField
-                label="Limiar de Temperatura (°F)"
-                placeholder="Ex: 85"
-                type="number"
-                value={thresholdF}
-                onChange={(e) => {
-                  setThresholdF(e.target.value);
-                  setThresholdError('');
-                }}
-                error={thresholdError}
-                data-testid="threshold-input"
-              />
-            </div>
+            {/* Alert Configuration Section - 1 column */}
+            <div className="rounded-lg bg-white p-6 shadow-md">
+              <h2 className="mb-6 text-lg font-semibold text-slate-900">Configuração de Alertas</h2>
 
-            {/* Save Button */}
-            <div className="mb-4">
-              <Button
-                label={isSaving ? 'Salvando...' : 'Salvar Limiar'}
-                variant="primary"
-                size="md"
-                onClick={handleSaveThreshold}
-                disabled={isSaving}
-                loading={isSaving}
-                data-testid="save-threshold-button"
-              />
-            </div>
+              {/* Alert Status */}
+              <div className="mb-6 rounded-md bg-slate-100 p-4">
+                <p className="text-sm text-slate-600">Estado dos Alertas</p>
+                <p
+                  className="mt-2 text-xl font-bold"
+                  data-testid="alert-status"
+                  style={{ color: alertsEnabled ? '#10b981' : '#6b7280' }}
+                >
+                  {alertsEnabled ? '🟢 Ativados' : '⚫ Desativados'}
+                </p>
+              </div>
 
-            {/* Alert Toggle Button */}
-            <div>
-              <Button
-                label={alertsEnabled ? 'Desativar Alertas' : 'Ativar Alertas'}
-                variant={alertsEnabled ? 'danger' : 'secondary'}
-                size="md"
-                onClick={handleToggleAlerts}
-                data-testid="toggle-alerts-button"
-              />
+              {/* Temperature Threshold Input */}
+              <div className="mb-4">
+                <InputField
+                  label="Limiar de Temperatura (°F)"
+                  placeholder="Ex: 85"
+                  type="number"
+                  value={thresholdF}
+                  onChange={(e) => {
+                    setThresholdF(e.target.value);
+                    setThresholdError('');
+                  }}
+                  error={thresholdError}
+                  data-testid="threshold-input"
+                />
+              </div>
+
+              {/* Save Button */}
+              <div className="mb-4">
+                <Button
+                  label={isSaving ? 'Salvando...' : 'Salvar Limiar'}
+                  variant="primary"
+                  size="md"
+                  onClick={handleSaveThreshold}
+                  disabled={isSaving}
+                  loading={isSaving}
+                  data-testid="save-threshold-button"
+                />
+              </div>
+
+              {/* Alert Toggle Button */}
+              <div className="mb-4">
+                <Draggable id="toggle-alerts-button">
+                  {alertsEnabled ? 'Desativar Alertas' : 'Ativar Alertas'}
+                </Draggable>
+              </div>
+
+              {/* Drop Zone */}
+              <Droppable id="alerts-drop-zone">
+                <p className="text-center text-slate-500 text-sm">
+                  Arraste elementos aqui
+                </p>
+              </Droppable>
             </div>
-          </div>
 
           {/* Alert List Section */}
           <div className="lg:col-span-3 rounded-lg bg-white p-6 shadow-md">
@@ -266,49 +316,21 @@ export default function Dashboard() {
               </p>
             </div>
 
-            <DragDropProvider
-              onDragEnd={(event) => {
-                if (event.canceled) {
-                  return;
-                }
-
-                const sourceId = String(event.operation.source?.id ?? '');
-                const targetId = String(event.operation.target?.id ?? '');
-
-                if (!sourceId || !targetId || sourceId === targetId) {
-                  return;
-                }
-
-                setDndAlerts((current) => {
-                  const sourceIndex = current.findIndex((item) => item.id === sourceId);
-                  const targetIndex = current.findIndex((item) => item.id === targetId);
-
-                  if (sourceIndex < 0 || targetIndex < 0) {
-                    return current;
-                  }
-
-                  const reordered = [...current];
-                  const [movedItem] = reordered.splice(sourceIndex, 1);
-                  reordered.splice(targetIndex, 0, movedItem);
-
-                  return reordered;
-                });
-              }}
-            >
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                {dndAlerts.map((item, index) => (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {dndAlerts.map((item, index) => (
+                <Droppable key={item.id} id={item.id} className="">
                   <SortableAlertRow
-                    key={item.id}
                     item={item}
                     index={index}
                     isSelected={selectedAlert === item.label}
                     onSelect={() => setSelectedAlert(item.label)}
                   />
-                ))}
-              </div>
-            </DragDropProvider>
+                </Droppable>
+              ))}
+            </div>
           </div>
-        </div>
+          </div>
+        </DragDropProvider>
       </div>
     </main>
   );
